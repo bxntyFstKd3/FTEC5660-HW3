@@ -170,14 +170,79 @@ for each public company. Grading uses a private set of about 20 unseen
 companies with the same tools and the same answer key rules, but different
 names and wording, and scores your 3 points only.
 
-## Homework 3 solution:
-> to students: this is your report, see the homework description.
+## Homework 3 solution
 
 ### My 3 points and rules
-> for each point: why you chose it, your PASS rule in one or two sentences, and the evidence it uses. Quote Fisher where it helps.
+
+I selected **Points 4, 7, 11**, implemented as `CHOSEN_POINTS = [4, 7, 11]`. These points assess three complementary aspects of business quality: the sales organization, employee relations, and competitive advantage. Each can be evaluated using informed interviews, making them suitable for the assignment’s implementation of Fisher’s *scuttlebutt* approach.
+
+#### Point 4 — Above-average sales organization
+
+I chose this point because a capable sales organization helps a company understand customer needs, communicate product value, and maintain customer relationships. Customer and competitor interviews provide direct perspectives on how effectively the sales team operates.
+
+- **PASS rule:** Informed interviews provide concrete evidence of an above-average sales organization, such as knowledgeable salespeople, effective customer coverage, responsive service, or strong customer relationships. An ordinary or weak organization, poor expertise or coverage, or persistent service and relationship problems leads to FAIL.
+- **Evidence:** `interview("customer", "sales_team")` and `interview("competitor", "sales_team")`.
+
+#### Point 7 — Labour and personnel relations
+
+I chose this point because employee relations reveal whether the company maintains a constructive working environment and addresses personnel concerns effectively. Current and former employees provide evidence about everyday working conditions beyond management’s public statements.
+
+- **PASS rule:** Informed interviews substantiate constructive employee relations through fair treatment, trust, and effective handling of employee concerns. Material unresolved grievances, unfair treatment, chronic distrust, or persistent damaging conflict leads to FAIL.
+- **Evidence:** `interview("current_employee", "working_conditions")` and `interview("former_employee", "working_conditions")`.
+
+#### Point 11 — Competitive advantage
+
+I chose this point because a company’s relative strength depends partly on whether competitors can readily reproduce its capabilities and customers can easily replace its products. Competitors help assess imitation barriers, while customers help assess substitutability and switching costs.
+
+- **PASS rule:** Informed interviews identify a meaningful, defensible advantage, such as proprietary know-how, qualification barriers, switching costs, or a distinctive capability that is difficult to imitate or replace. Easily copied or readily replaceable offerings, or competition mainly on price without such an advantage, lead to FAIL.
+- **Evidence:** `interview("competitor", "competitive_edge")` and `interview("customer", "competitive_edge")`.
+
+For all three points, the model interprets the meaning of the evidence rather than matching keywords. Generic praise is insufficient, resolved historical problems do not automatically imply FAIL, and material unresolved contradictions must be addressed. Each point is assessed separately.
 
 ### Design
-> a visualization of your agent design and one paragraph describing it.
+
+```mermaid
+flowchart TD
+    A["Company tools"] --> B["Fixed interview plan"]
+    B --> C["Point 4: customer and competitor"]
+    B --> D["Point 7: current and former employees"]
+    B --> E["Point 11: competitor and customer"]
+    C --> F["Combine six interview responses"]
+    D --> F
+    E --> F
+    F --> G["DeepSeek: verdicts, reasons, and quotes"]
+    G --> H{"Validate structure and quotes"}
+    H -->|Valid| I["Return verdicts and summary"]
+    H -->|First validation failure| J["Request one repair using saved evidence"]
+    J --> G
+    H -->|Second validation failure| K["Return an explicit analysis failure"]
+```
+
+The implementation uses a fixed, tool-based workflow with `ChatDeepSeek` and the required `deepseek-v4-flash` model, configured with `temperature=0`. `build_agent()` initializes the model once, and `analyze_companies()` processes up to three companies concurrently. Within each company, the workflow sequentially collects two informed interviews for each selected point, using six of the ten permitted interviews. Although the assignment states that informed respondents agree, the second interview provides an additional perspective and a second attributable quotation. Since all three selected points are interview-based, the workflow does not need document or SQL queries; company evidence is obtained only through the supplied `interview` tool. One model request then evaluates all three points and returns structured JSON containing verdicts, reasons, and quotations from both respondents. Python validation checks the exact point set, valid PASS/FAIL labels, nonempty reasons, required respondent coverage, and whether each quotation occurs in its source interview after whitespace normalization. If validation fails, the model receives the error and gets one repair attempt using the same evidence, without additional interviews. The prompt also requests a consistency check between evidence, reasons, and verdicts, although the Python validator does not independently verify semantic correctness. Per-company and overall timeouts bound execution; failures return an explicit diagnostic and no fabricated verdicts.
 
 ### Results
-> your point score on `public_test`, the companies where your verdicts disagree with the public answers, and why.
+
+Evaluation of the existing `results.csv` against `public_test/ground_truth.json` gives the following results:
+
+| Selected point | Correct true-PASS verdicts | Correct true-FAIL verdicts | Total correct | Balanced point accuracy |
+| --- | ---: | ---: | ---: | ---: |
+| 4 — Sales organization | 14/14 | 6/6 | 20/20 | 100% |
+| 7 — Labour and personnel relations | 14/14 | 6/6 | 20/20 | 100% |
+| 11 — Competitive advantage | 14/14 | 6/6 | 20/20 | 100% |
+| **Overall** | **42/42** | **18/18** | **60/60** | **100%** |
+
+The assignment’s balanced point accuracy is the average of the accuracy on truly passing points and the accuracy on truly failing points:
+
+$$
+\text{Balanced point accuracy}
+=
+\frac{1}{2}
+\left(
+\frac{42}{42}+\frac{18}{18}
+\right)
+=100\%.
+$$
+
+All 20 companies received the correct verdict on all three selected points. **There were no disagreements with the public answers**. Each company used exactly six interviews, for a total of 120 interviews, remaining within the per-company limit of ten.
+
+The results show that the implemented rules agree with the public answer key on this test set. 

@@ -246,3 +246,22 @@ $$
 All 20 companies received the correct verdict on all three selected points. **There were no disagreements with the public answers**. Each company used exactly six interviews, for a total of 120 interviews, remaining within the per-company limit of ten.
 
 The results show that the implemented rules agree with the public answer key on this test set. 
+
+#### Repeated-Run Evaluation
+
+To evaluate the repeatability of the implementation, I ran the current version five consecutive times on the same 20 public-test companies. Each run evaluated Fisher's Points 4, 7, and 11, producing 60 company-point verdicts.
+
+All five runs achieved **60/60 correct verdicts** and **100.0% balanced accuracy**. Every run returned complete results for all 20 companies, and the company-level PASS/FAIL predictions were identical across runs.
+
+| Run | Correct verdicts | Balanced accuracy | Complete company results | Incomplete company results | Analysis-stage time |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 60/60 | 100.0% | 20/20 | 0 | 24.7 s |
+| 2 | 60/60 | 100.0% | 20/20 | 0 | 24.8 s |
+| 3 | 60/60 | 100.0% | 20/20 | 0 | 24.7 s |
+| 4 | 60/60 | 100.0% | 20/20 | 0 | 24.4 s |
+| 5 | 60/60 | 100.0% | 20/20 | 0 | 23.7 s |
+| **Mean** | **60/60** | **100.0%** | **20/20** | **0** | **24.46 s** |
+
+The analysis-stage durations, recorded by `analysis_elapsed`, ranged from **23.7 to 24.8 seconds**, a spread of **1.1 seconds**. The mean duration calculated from the logged values was **24.46 seconds**.
+
+Across the five runs, the program produced 300 recorded verdicts for the same 60 company-point pairs. Every pair received the same verdict in every run. Differences in the order of company log messages reflected concurrent execution. The repeated runs provide evidence of consistent public-test predictions and stable analysis-stage runtime under the tested configuration. 
